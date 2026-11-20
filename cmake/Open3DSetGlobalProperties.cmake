@@ -180,6 +180,10 @@ function(open3d_set_global_properties target)
             # The examples' .pdb files use up a lot of space and cause us to run
             # out of space on Github Actions. Compressing gives us another couple of GB.
             target_link_options(${target} PRIVATE /pdbcompress)
+        else()
+            # Non-MSVC Windows toolchains (the clang driver used for HIP) get
+            # neither the MSVC defines above nor the /DWIN32 CMake adds for MSVC.
+            target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES WIN32)
         endif()
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)

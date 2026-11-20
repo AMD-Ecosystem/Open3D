@@ -16,6 +16,17 @@ else()
     set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS}")
 endif()
 
+# Non-MSVC Windows toolchains (the clang driver used for HIP): draco names its
+# static target draco_static unless the compiler is MSVC, while assimp looks
+# for draco on every WIN32 build; and draco's _FILE_OFFSET_BITS=64 selects
+# ftello, which the MSVC C runtime lacks (draco falls back to _ftelli64).
+set(assimp_win_clang_patch_command)
+if(WIN32 AND NOT MSVC)
+    set(assimp_win_clang_patch_command
+        COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+            ${CMAKE_CURRENT_LIST_DIR}/0004-fix-draco-non-msvc-windows.patch)
+endif()
+
 # Assimp import/export toggles aligned with Open3D mesh I/O (see TriangleMeshIO and
 # FileASSIMP). Native Open3D readers/writers handle ply and legacy off read; assimp
 # is enabled only for the formats below.
@@ -37,6 +48,7 @@ ExternalProject_Add(
         ${CMAKE_CURRENT_LIST_DIR}/0002-fix-usd-embedded-texture-mwidth-bytes.patch
     COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
         ${CMAKE_CURRENT_LIST_DIR}/0003-fix-draco-cmake-intelllvm-cxx-flags.patch
+    ${assimp_win_clang_patch_command}
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_CXX_FLAGS:STRING=${assimp_cmake_cxx_flags}

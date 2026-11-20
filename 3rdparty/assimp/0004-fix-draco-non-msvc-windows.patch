@@ -1,0 +1,22 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -750,7 +750,7 @@ ELSE()
+         set_property(DIRECTORY "contrib/draco" PROPERTY BUILD_SHARED_LIBS OFF)
+       ENDIF()
+ 
+-      IF(MSVC OR WIN32)
++      IF(MSVC)
+         SET(draco_LIBRARIES "draco")
+       ELSE()
+         IF(ASSIMP_BUILD_DRACO_STATIC)
+--- a/contrib/draco/cmake/draco_build_definitions.cmake
++++ b/contrib/draco/cmake/draco_build_definitions.cmake
+@@ -90,7 +90,7 @@ macro(draco_set_build_definitions)
+   endif()
+ 
+   if(NOT MSVC)
+-    if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
++    if(${CMAKE_SIZEOF_VOID_P} EQUAL 8 AND NOT WIN32)
+       # Ensure 64-bit platforms can support large files.
+       list(APPEND draco_defines "_LARGEFILE_SOURCE" "_FILE_OFFSET_BITS=64")
+     endif()

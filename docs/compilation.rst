@@ -355,8 +355,38 @@ specific GPU, or for several at once, e.g.
 ``-DCMAKE_HIP_ARCHITECTURES="gfx90a;gfx1100"``. ``rocminfo`` prints the
 architecture of the installed GPU.
 
+On Windows, build from a Visual Studio x64 Developer Command Prompt with the
+ROCm SDK's ``clang``/``clang++`` for all three languages and the Ninja
+generator. Several bundled host libraries do not build with clang on Windows,
+so take them from `vcpkg <https://vcpkg.io>`_ (triplet ``x64-windows``, built
+with the same MSVC toolset as the prompt):
+``vcpkg install tbb libjpeg-turbo openssl curl embree zeromq cppzmq pkgconf``.
+The vcpkg libraries use the DLL C runtime, hence
+``-DSTATIC_WINDOWS_RUNTIME=OFF``.
+
+.. code-block:: bat
+
+    :: <rocm> is the ROCm SDK root, <vcpkg> is <vcpkg_root>\installed\x64-windows
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_C_COMPILER=<rocm>/lib/llvm/bin/clang.exe ^
+          -DCMAKE_CXX_COMPILER=<rocm>/lib/llvm/bin/clang++.exe ^
+          -DCMAKE_HIP_COMPILER=<rocm>/lib/llvm/bin/clang++.exe ^
+          -DUSE_HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx1151 ^
+          -DCMAKE_PREFIX_PATH="<rocm>;<vcpkg>" ^
+          -DPKG_CONFIG_EXECUTABLE=<vcpkg>/tools/pkgconf/pkgconf.exe ^
+          -DSTATIC_WINDOWS_RUNTIME=OFF ^
+          -DUSE_SYSTEM_TBB=ON -DUSE_SYSTEM_JPEG=ON -DUSE_SYSTEM_OPENSSL=ON ^
+          -DUSE_SYSTEM_CURL=ON -DUSE_SYSTEM_EMBREE=ON -DUSE_SYSTEM_ZEROMQ=ON ^
+          -DBUILD_GUI=OFF -DBUILD_WEBRTC=OFF -DBUILD_PYTHON_MODULE=OFF ^
+          -DBUILD_ISPC_MODULE=OFF -DWITH_IPP=OFF ..
+    cmake --build .
+
+CMake versions before 4.3 cannot use ``clang-cl`` as the HIP compiler, which is
+why the GNU-style ``clang++`` driver is used. At run time, put the ROCm SDK's
+``bin`` directory and ``<vcpkg>\bin`` on ``PATH``.
+
 .. note::
-    ROCm support targets Linux and covers the core tensor and ``open3d.t``
+    ROCm support covers the core tensor and ``open3d.t``
     GPU code paths. A few CUDA-only features are not yet available on ROCm but
     do not fail the build: the NPP-based GPU image filters report the operation
     as unsupported at runtime (run them on the CPU device instead), the
